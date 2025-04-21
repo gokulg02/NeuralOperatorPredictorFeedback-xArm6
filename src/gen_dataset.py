@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 
 from baxter import Baxter
+from config import SimulationConfig
 
 # Simulates the system
 def simulate_system(baxter, x0, q_des, q_desdot, q_desddot, dt, T, D, dof, predictor_func, model, randomize=False):
@@ -36,7 +37,7 @@ def simulate_system(baxter, x0, q_des, q_desdot, q_desddot, dt, T, D, dof, predi
     return q_vals, controls, predictors
 
 # Generate a trajecotry following a sinusoid
-def generate_trajectory(joint_lim_min, joint_lim_max, scaling, dt, T, D, y_shift):
+def generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D, y_shift):
     t = np.arange(0, T+D, dt)
     q = np.zeros((len(t), len(joint_lim_min)))
     qd= np.zeros((len(t), len(joint_lim_min)))
@@ -50,10 +51,10 @@ def generate_trajectory(joint_lim_min, joint_lim_max, scaling, dt, T, D, y_shift
             raise Exception("Trajectory not feasible")
     return q, qd, qdd
     
-def gen_dataset(num_data,baxter, dt, T, dof, D, joint_lim_min, joint_lim_max, deviation, filename):
+def gen_dataset(num_data,baxter, dt, T, dof, D, scaling, period, joint_lim_min, joint_lim_max, deviation, filename):
     t = np.arange(0, T, dt)
     nD = int(round(D/dt))
-    q_des, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, scaling, dt, T, D,(joint_lim_max + joint_lim_min) / 2.0  )
+    q_des, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D,(joint_lim_max + joint_lim_min) / 2.0  )
     inputs = np.zeros((num_data, nD, 3*dof))
     outputs = np.zeros((num_data, nD, 2*dof))
     index = 0
@@ -95,24 +96,18 @@ def gen_dataset(num_data,baxter, dt, T, dof, D, joint_lim_min, joint_lim_max, de
     np.save("../datasets/outputs" + filename + ".npy", outputs)
     print("Generated successfully. Total time:", end_time-start_time)
 
-dof = 3
+sim_config_path = "../config/config.toml"
+sim_config = SimulationConfig(sim_config_path)
+
+dof = sim_config.dof
 alpha_mat = np.identity(dof)
 beta_mat = np.identity(dof)
-baxter = Baxter(dof, alpha_mat, beta_mat)
+baxter = Baxter(dof, sim_config.alpha_mat, sim_config.beta_mat)
 
 joint_lim_min = np.array([-1.7016, -2.147, -3.0541, -0.05, -3.059, -1.571, -3.059])
 joint_lim_max = np.array([1.7016, 1.047, 3.0541, 2.618, 3.059, 2.094, 3.059])
 joint_lim_min = joint_lim_min[0:dof]
 joint_lim_max = joint_lim_max[0:dof]
 
-T = 10
-period = 1
-dt = 0.1
-scaling = 0.1
-t = np.arange(0, T, dt)
-# Handles delays up to any time essentially
-D = 0.5
-nD = int(round(D/dt))
-
-gen_dataset(1000, baxter, dt, T, dof, D, joint_lim_min, joint_lim_max, 2, "testDataset")
+gen_dataset(sim_config.num_data, baxter, sim_config.dt, sim_config.T, dof, sim_config.D, sim_config.scaling, sim_config.period, joint_lim_min, joint_lim_max, 2, "testDataset")
 

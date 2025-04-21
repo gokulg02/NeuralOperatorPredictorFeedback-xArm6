@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # only need the imports on lines 6 and 7 if using ML predictors
 import torch
 from models import GRUNet, DeepONetProjected, ml_predictor_rnn
+from config import SimulationConfig, ModelConfig
 from baxter import Baxter
 
 # Simulates the system
@@ -38,7 +39,7 @@ def simulate_system(baxter, x0, qdes, qdesdot, qdesddot, dt, T, D, dof, predicto
     return q_vals, controls, predictors
 
 # Generate a trajecotry following a sinusoid
-def generate_trajectory(joint_lim_min, joint_lim_max, scaling, dt, T, D, y_shift):
+def generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D, y_shift):
     t = np.arange(0, T+D, dt)
     q = np.zeros((len(t), len(joint_lim_min)))
     qd= np.zeros((len(t), len(joint_lim_min)))
@@ -52,8 +53,17 @@ def generate_trajectory(joint_lim_min, joint_lim_max, scaling, dt, T, D, y_shift
             raise Exception("Trajectory not feasible")
     return q, qd, qdd
 
+### LOAD CONFIG ### 
+# Config can be loaded through config.dat or specified for this file in particular using the settings
+# below. 
+sim_config_path = "../config/config.toml"
+sim_config = SimulationConfig(sim_config_path)
+
+model_config_path = "../config/gru.toml"
+model_config = ModelConfig(model_config_path)
+
 # Baxter parameters
-dof = 3
+dof = sim_config.dof
 alpha_mat = np.identity(dof)
 beta_mat = np.identity(dof)
 baxter = Baxter(dof, alpha_mat, beta_mat)
@@ -63,25 +73,16 @@ joint_lim_max = np.array([1.7016, 1.047, 3.0541, 2.618, 3.059, 2.094, 3.059])
 joint_lim_min = joint_lim_min[0:dof]
 joint_lim_max = joint_lim_max[0:dof]
 
-
-T = 10
-period = 1
-dt = 0.1
-scaling = 0.1
-t = np.arange(0, T, dt)
-D = 0.5
-nD = int(round(D/dt))
-
 # Setup initial condition and desired trajectory
 init_cond = (joint_lim_max + joint_lim_min) / 2.0
 y_shift = init_cond
-qdes, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, 0.1, dt, T, D, y_shift)
+qdes, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, sim_config.scaling, sim_config.period, sim_config.dt, sim_config.T, sim_config.D, y_shift)
 init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof)
 
 # Setup type of predictor. If using ML, make sure to modify the parameters below in the match statement to
 # load the correct model
 predictor_type = "GRU"
-model_filename = "testGRU"
+model_filename = model_config.model_filename
 
 # Set cuda or cpu device. Replace "cuda" with "cpu" to switch. MACOS uses cpu here even with builtin gpu. 
 torch.set_default_device("cuda")
@@ -89,18 +90,25 @@ device = torch.device("cuda")
 
 match predictor_type:
     case "numerical":
-        statesExact, controlsExact, predictorsExact = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, dt, T, D, dof, baxter.compute_predictors, None, False)
+        states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, sim_config.dof, baxter.compute_predictors, None, False)
     case "GRU":
-        model = GRUNet(64, 5, 3*dof, 2*dof, dof, nD)
-        model.load_state_dict(torch.load("../models/" + model_filename, weights_only=True))
-        model.to(device)
-        statesExact, controlsExact, predictorsExact = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, dt, T, D, dof, ml_predictor_rnn, model, False)
+        model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
+        model = GRUNet(model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+        model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
+        model.to(model_config.device)
+        states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_rnn, model, False)
     case "DeepONet":
-        statesExact, controlsExact, predictorsExact = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, dt, T, D, dof, baxter.compute_predictors, None, False)
+        spatial = np.arange(0, sim_config.D, sim_config.dt/(3*sim_config.dof)).astype(np.float32)
+        grid=torch.from_numpy(spatial.reshape((len(spatial), 1))).to(sim_config.device)
+        model_config.update_config(input_channel=grid_shape[0], output_channel=sim_config.nD*2*sim_config.dof)
+        model = DeepONetProjected(model_config.dim_x, model_config.num_layers, model_config.n_input_channel, model_config.n_output_channel, model_config.projection_width, grid)
+        model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
+        model.to(model_config.device)
+        states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_deeponet, model, False)
     case _:
         raise Exception("Predictor type not supported. Please use numerical, GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
 
-plt.plot(statesExact[:, 0])
+plt.plot(states[:, 0])
 plt.plot(qdes[:, 0])
 plt.show()
 

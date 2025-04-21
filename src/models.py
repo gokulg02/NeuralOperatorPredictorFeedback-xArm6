@@ -10,13 +10,17 @@ import deepxde as dde
 
 class DeepONetProjected(nn.Module):
     # m is typically set to nD*dof*3, dim_x is usually 1, and proj1, proj2 specify the projection of the linear layers. 
-    def __init__(self, m, dim_x, proj1, proj2, grid):
+    def __init__(self, dim_x, hidden_size, num_layers, n_input_channel, n_output_channel, projection_size, grid):
         super().__init__()
         width = 256
         self.grid = grid
-        self.deeponet = dde.nn.DeepONetCartesianProd([m, 128, 128, 128], [dim_x, 128, 128, 128], "relu", "Glorot normal").cuda()
-        self.linear1 = torch.nn.Linear(m, proj1)
-        self.linear2 = torch.nn.Linear(proj1, proj2)
+        inputArr = [hidden_size]*num_layers
+        outputArr = [hidden_size]*num_layers
+        inputArr[0] = n_input_channel
+        outputArr[0] = dim_x
+        self.deeponet = dde.nn.DeepONetCartesianProd(inputArr, outputArr, "relu", "Glorot normal").cuda()
+        self.linear1 = torch.nn.Linear(m, projection_size)
+        self.linear2 = torch.nn.Linear(projection_size, n_output_channel)
 
     def forward(self, x):
         y = self.deeponet(x)
