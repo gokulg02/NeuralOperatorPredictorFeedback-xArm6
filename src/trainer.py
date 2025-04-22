@@ -19,12 +19,15 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
     match model_type:
         case "DeepONet":
             grid = model.grid
-        case "GRU":
+        case "GRU" | "LSTM" | "FNO+GRU":
             nD = model.nD
             dof = model.dof
+        case "FNO":
+            pass
         case _:
-            raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
+            raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
     print("Epoch", "Time", "Train Loss", "Test Loss")
+    print("Total epochs", num_epochs)
     for ep in range(num_epochs):
         model.train()
         t1 = time.time()
@@ -34,12 +37,17 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
             match model_type:
                 case "DeepONet":
                     out = model((x_vals, grid))
-                case "GRU":
+                case "GRU" | "LSTM":
                     x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
                     y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
                     out = model(x_vals)
+                case "FNO":
+                    out = model(x_vals)
+                case "FNO+GRU":
+                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                    out = model(x_vals)
                 case _:
-                    raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
+                    raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
     
             lp = loss(out, y_vals)
             lp.backward()
@@ -55,12 +63,17 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
                 match model_type:
                     case "DeepONet":
                         out = model((x_vals, grid))
-                    case "GRU":
+                    case "GRU" | "LSTM":
                         x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
                         y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
                         out = model(x_vals)
+                    case "FNO":
+                        out = model(x_vals)
+                    case "FNO+GRU":
+                        y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                        out = model(x_vals)
                     case _:
-                        raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
+                        raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
                 test_loss += loss(out, y_vals).item()
                 
         train_loss /= len(trainData)
@@ -89,6 +102,8 @@ def evaluate_model(model, name, train_lossArr, test_lossArr):
     plt.plot(test_lossArr, label="Test Loss")
     plt.yscale("log")
     plt.legend()
+    plt.show()
+    plt.savefig("losscurve.pdf")
         
     print("Final Testing Loss:", test_lossArr[-1])
     print("Final Training Loss:", train_lossArr[-1])

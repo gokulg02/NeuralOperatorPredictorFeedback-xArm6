@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # only need the imports on lines 6 and 7 if using ML predictors
 import torch
-from models import GRUNet, DeepONetProjected, ml_predictor_rnn
+from models import GRUNet, LSTMNet, DeepONetProjected, FNOProjected, ml_predictor_rnn, ml_predictor_deeponet, ml_predictor_fno
 from config import SimulationConfig, ModelConfig
 from baxter import Baxter
 
@@ -59,7 +59,7 @@ def generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D,
 sim_config_path = "../config/config.toml"
 sim_config = SimulationConfig(sim_config_path)
 
-model_config_path = "../config/gru.toml"
+model_config_path = "../config/fno.toml"
 model_config = ModelConfig(model_config_path)
 
 torch.set_default_device(model_config.device_name)
@@ -77,14 +77,14 @@ joint_lim_min = joint_lim_min[0:dof]
 joint_lim_max = joint_lim_max[0:dof]
 
 # Setup initial condition and desired trajectory
-init_cond = (joint_lim_max + joint_lim_min) / 2.0
+init_cond = (joint_lim_max + joint_lim_min) / 2.0 + np.random.uniform(-0.05, 0.05, dof)
 y_shift = init_cond
 qdes, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, sim_config.scaling, sim_config.period, sim_config.dt, sim_config.T, sim_config.D, y_shift)
 init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof)
 
 # Setup type of predictor. If using ML, make sure to modify the parameters below in the match statement to
 # load the correct model
-predictor_type = "GRU"
+predictor_type = "FNO"
 model_filename = model_config.model_filename
 
 
@@ -97,18 +97,33 @@ match predictor_type:
         model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
         model.to(model_config.device)
         states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_rnn, model, False)
+    case "LSTM":
+        model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
+        model = LSTMNet(model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+        model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
+        model.to(model_config.device)
+        states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_rnn, model, False)
     case "DeepONet":
         spatial = np.arange(0, sim_config.D, sim_config.dt/(3*sim_config.dof)).astype(np.float32)
         grid=torch.from_numpy(spatial.reshape((len(spatial), 1))).to(sim_config.device)
-        model_config.update_config(input_channel=grid_shape[0], output_channel=sim_config.nD*2*sim_config.dof)
-        model = DeepONetProjected(model_config.dim_x, model_config.num_layers, model_config.n_input_channel, model_config.n_output_channel, model_config.projection_width, grid)
+        model_config.update_config(input_channel=grid.shape[0], output_channel=sim_config.nD*2*sim_config.dof)
+        model = DeepONetProjected(model_config.dim_x, model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, model_config.projection_width, grid, sim_config.dof, sim_config.nD)
         model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
         model.to(model_config.device)
         states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_deeponet, model, False)
+    case "FNO":
+        model_config.update_config(input_channel=3*sim_config.dof*sim_config.nD, output_channel=2*sim_config.dof*sim_config.nD)
+        model = FNOProjected(model_config.dim_x, model_config.hidden_size, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+        model.load_state_dict(torch.load("../models/" + model_config.model_filename, weights_only=True))
+        states, controls, predcitors = simulate_system(baxter, init_cond, qdes, qd_des, qdd_des, sim_config.dt, sim_config.T, sim_config.D, dof, ml_predictor_fno, model, False)
+    case "GRU+FNO":
+        
+    case "GRU+DeepONet":
     case _:
         raise Exception("Predictor type not supported. Please use numerical, GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
 
 plt.plot(states[:, 0])
 plt.plot(qdes[:, 0])
+plt.savefig("myTraj.pdf")
 plt.show()
 

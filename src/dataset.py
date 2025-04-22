@@ -50,6 +50,47 @@ def generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D,
         if (np.maximum(np.minimum(q[i], joint_lim_max), joint_lim_min) != q[i]).any():
             raise Exception("Trajectory not feasible")
     return q, qd, qdd
+
+def gen_dataset_dagger(num_data, baxter, dt, T, dof, D, scaling, period, joint_lim_min, joint_lim_max, deviation, predictor_func, model):
+    t = np.arange(0, T, dt)
+    nD = int(round(D/dt))
+    q_des, qd_des, qdd_des = generate_trajectory(joint_lim_min, joint_lim_max, scaling, period, dt, T, D,(joint_lim_max + joint_lim_min) / 2.0  )
+    inputs = np.zeros((num_data, nD, 3*dof))
+    outputs = np.zeros((num_data, nD, 2*dof))
+    index = 0
+    num_trajs = 0
+    start_time = time.time()
+    sample_rate  =  len(np.arange(0, len(t)-1)[nD+1:])
+    print("Generating", num_data, "values with sample rate", sample_rate)
+    print("This will require simulating", math.ceil(num_data/sample_rate), "trajectories")
+    start_time = time.time()
+    last_time = start_time
+    while index+1 < num_data:
+        if num_trajs % 5 == 0:
+            print("Simulated Trajectories: ", num_trajs, "/",  math.ceil(num_data/sample_rate))
+            print("Total time per this batch of trajectories", time.time()-last_time)
+            print("Total time spent", time.time()-start_time)
+            last_time = time.time()
+        num_trajs += 1
+        sample_locs = np.arange(0, len(t)-1)[nD+1:]
+        init_cond = init_cond = (joint_lim_max + joint_lim_min) / 2.0  + np.random.uniform(-1*deviation, 1*deviation, dof)
+        init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof) 
+        states, controls, predictors = simulate_system(baxter, init_cond, q_des, qd_des, qdd_des, dt, T, D, dof, predictor_func, model, randomize=False)
+        for i in range(len(sample_locs)):
+            val = sample_locs[i]
+            myStates = states[val-1] 
+            myControls = controls[val-1:val-1+nD] 
+            inputs[index, :, 0:2*dof] =  np.tile(myStates, nD).reshape(nD, 2*dof)
+            inputs[index, :, 2*dof:] = myControls
+            outputs[index] = baxter.compute_predictors(dt, myStates, myControls, None)[1]
+            index += 1
+            if index+1 >= num_data:
+                break
+    end_time = time.time()
+    inputs = inputs.reshape((num_data, nD*3*dof)).astype(np.float32)
+    outputs = outputs.reshape((num_data, nD*2*dof)).astype(np.float32)
+    return inputs, outputs
+
     
 def gen_dataset(num_data,baxter, dt, T, dof, D, scaling, period, joint_lim_min, joint_lim_max, deviation, filename):
     t = np.arange(0, T, dt)
@@ -95,19 +136,3 @@ def gen_dataset(num_data,baxter, dt, T, dof, D, scaling, period, joint_lim_min, 
     np.save("../datasets/inputs" + filename +".npy", inputs)
     np.save("../datasets/outputs" + filename + ".npy", outputs)
     print("Generated successfully. Total time:", end_time-start_time)
-
-sim_config_path = "../config/config.toml"
-sim_config = SimulationConfig(sim_config_path)
-
-dof = sim_config.dof
-alpha_mat = np.identity(dof)
-beta_mat = np.identity(dof)
-baxter = Baxter(dof, sim_config.alpha_mat, sim_config.beta_mat)
-
-joint_lim_min = np.array([-1.7016, -2.147, -3.0541, -0.05, -3.059, -1.571, -3.059])
-joint_lim_max = np.array([1.7016, 1.047, 3.0541, 2.618, 3.059, 2.094, 3.059])
-joint_lim_min = joint_lim_min[0:dof]
-joint_lim_max = joint_lim_max[0:dof]
-
-gen_dataset(sim_config.num_data, baxter, sim_config.dt, sim_config.T, dof, sim_config.D, sim_config.scaling, sim_config.period, joint_lim_min, joint_lim_max, sim_config.deviation, sim_config.dataset_filename)
-

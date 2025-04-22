@@ -37,7 +37,11 @@ class SimulationConfig:
                     "batch_size": config["dataset"]["batch_size"],
                     "random_state": config["dataset"]["random_state"],
                     "device_name": config["dataset"]["device_name"],
-                    "device": config["dataset"]["device"]}
+                    "device": config["dataset"]["device"],
+                    "dagger": config["dataset"]["dagger"],
+                    "batch_size_dagger": config["dataset"]["batch_size_dagger"],
+                    "num_data_dagger": config["dataset"]["num_data_dagger"],
+                    "deviation_dagger": config["dataset"]["deviation_dagger"]}
 
 
     def update_config(self, **kwargs):
@@ -73,11 +77,16 @@ class ModelConfig:
                 "gamma": config["model"]["gamma"],
                 "learning_rate": config["model"]["learning_rate"],
                 "weight_decay": config["model"]["weight_decay"],
+                "iters_dag": config["model"]["iters_dag"],
+                "epochs_dag": config["model"]["epochs_dag"],
+                "gamma_dag": config["model"]["gamma_dag"],
+                "learning_rate_dag": config["model"]["learning_rate_dag"],
+                "weight_decay_dag": config["model"]["weight_decay_dag"],
                 "device_name": config["model"]["device_name"],
                 "device": config["model"]["device"]
                 }
         match self.string_dict["model_type"]:
-            case "GRU":
+            case "GRU" | "LSTM":
                 self.string_dict["num_layers"] =  config["GRU"]["num_layers"]
                 self.string_dict["hidden_size"] =  config["GRU"]["hidden_size"]
                 self.string_dict["input_channel"] =  config["GRU"]["input_channel"]
@@ -91,6 +100,22 @@ class ModelConfig:
                 self.string_dict["output_channel"] =  config["DeepONet"]["output_channel"]
                 self.string_dict["dim_x"] = config["DeepONet"]["dim_x"]
                 self.string_dict["projection_width"] = config["DeepONet"]["projection_width"]
+            case "FNO":
+                self.string_dict["hidden_size"] =  config["FNO"]["hidden_size"]
+                self.string_dict["modes"] =  config["FNO"]["hidden_size"]
+                self.string_dict["input_channel"] =  config["FNO"]["input_channel"]
+                self.string_dict["output_channel"] =  config["FNO"]["output_channel"]
+                self.string_dict["dim_x"] = config["FNO"]["dim_x"]
+                self.string_dict["projection_width"] = config["FNO"]["projection_width"]
+            case "FNO+GRU":
+                self.string_dict["fno_hidden_size"] =  config["FNOGRU"]["fno_hidden_size"]
+                self.string_dict["gru_hidden_size"] =  config["FNOGRU"]["gru_hidden_size"]
+                self.string_dict["num_layers"] =  config["FNOGRU"]["num_layers"]
+                self.string_dict["modes"] =  config["FNOGRU"]["modes"]
+                self.string_dict["input_channel"] =  config["FNOGRU"]["input_channel"]
+                self.string_dict["output_channel"] =  config["FNOGRU"]["output_channel"]
+                self.string_dict["dim_x"] = config["FNOGRU"]["dim_x"]
+                self.string_dict["projection_width"] = config["FNOGRU"]["projection_width"]
             case _:
                 pass
 
