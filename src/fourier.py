@@ -38,7 +38,7 @@ class SpectralConv1d(nn.Module):
         return x
 
 class FNO1d(nn.Module):
-    def __init__(self, modes, width, inp_size, out_size):
+    def __init__(self, num_layers, modes, width, inp_size, out_size):
         super(FNO1d, self).__init__()
 
         """
@@ -59,14 +59,8 @@ class FNO1d(nn.Module):
         self.padding = 2 # pad the domain if input is non-periodic
         self.fc0 = nn.Linear(inp_size+1, self.width) # input channel is 2: (a(x), x)
 
-        self.conv0 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.conv1 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.conv2 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.conv3 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.w0 = nn.Conv1d(self.width, self.width, 1)
-        self.w1 = nn.Conv1d(self.width, self.width, 1)
-        self.w2 = nn.Conv1d(self.width, self.width, 1)
-        self.w3 = nn.Conv1d(self.width, self.width, 1)
+        self.spectrals = nn.ModuleList([SpectralConv1d(self.width, self.width, self.modes1) for i in range(num_layers)])
+        self.convs = nn.ModuleList([nn.Conv1d(self.width, self.width, 1) for i in range(num_layers)])
 
         self.fc1 = nn.Linear(self.width, 128)
         self.fc2 = nn.Linear(128, out_size)
@@ -77,25 +71,12 @@ class FNO1d(nn.Module):
         x = self.fc0(x)
         x = x.permute(0, 2, 1)
         x = F.pad(x, [0,self.padding]) # pad the domain if input is non-periodic
-    
-        x1 = self.conv0(x)
-        x2 = self.w0(x)
-        x = x1 + x2
-        x = F.gelu(x)
 
-        x1 = self.conv1(x)
-        x2 = self.w1(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv2(x)
-        x2 = self.w2(x)
-        x = x1 + x2
-        x = F.gelu(x)
-
-        x1 = self.conv3(x)
-        x2 = self.w3(x)
-        x = x1 + x2
+        for i, l in enumerate(self.spectrals):
+            x1 = l(x)
+            x2 = self.convs[i](x)
+            x = x1 + x2
+            x = F.gelu(x)
 
         x = x[..., :-self.padding] # pad the domain if input is non-periodic
         x = x.permute(0, 2, 1)

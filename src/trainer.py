@@ -19,11 +19,9 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
     match model_type:
         case "DeepONet":
             grid = model.grid
-        case "GRU" | "LSTM" | "FNO+GRU":
+        case "GRU" | "LSTM" | "FNO+GRU" | "FNO":
             nD = model.nD
             dof = model.dof
-        case "FNO":
-            pass
         case _:
             raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
     print("Epoch", "Time", "Train Loss", "Test Loss")
@@ -37,13 +35,8 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
             match model_type:
                 case "DeepONet":
                     out = model((x_vals, grid))
-                case "GRU" | "LSTM":
+                case "GRU" | "LSTM" | "FNO" | "FNO+GRU":
                     x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
-                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
-                    out = model(x_vals)
-                case "FNO":
-                    out = model(x_vals)
-                case "FNO+GRU":
                     y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
                     out = model(x_vals)
                 case _:
@@ -63,13 +56,8 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
                 match model_type:
                     case "DeepONet":
                         out = model((x_vals, grid))
-                    case "GRU" | "LSTM":
+                    case "GRU" | "LSTM" | "FNO" | "FNO+GRU":
                         x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
-                        y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
-                        out = model(x_vals)
-                    case "FNO":
-                        out = model(x_vals)
-                    case "FNO+GRU":
                         y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
                         out = model(x_vals)
                     case _:

@@ -101,21 +101,19 @@ class ModelConfig:
                 self.string_dict["dim_x"] = config["DeepONet"]["dim_x"]
                 self.string_dict["projection_width"] = config["DeepONet"]["projection_width"]
             case "FNO":
+                self.string_dict["num_layers"] = config["FNO"]["num_layers"]
                 self.string_dict["hidden_size"] =  config["FNO"]["hidden_size"]
                 self.string_dict["modes"] =  config["FNO"]["hidden_size"]
                 self.string_dict["input_channel"] =  config["FNO"]["input_channel"]
                 self.string_dict["output_channel"] =  config["FNO"]["output_channel"]
-                self.string_dict["dim_x"] = config["FNO"]["dim_x"]
-                self.string_dict["projection_width"] = config["FNO"]["projection_width"]
             case "FNO+GRU":
                 self.string_dict["fno_hidden_size"] =  config["FNOGRU"]["fno_hidden_size"]
                 self.string_dict["gru_hidden_size"] =  config["FNOGRU"]["gru_hidden_size"]
-                self.string_dict["num_layers"] =  config["FNOGRU"]["num_layers"]
+                self.string_dict["fno_num_layers"] =  config["FNOGRU"]["fno_num_layers"]
+                self.string_dict["gru_num_layers"] =  config["FNOGRU"]["gru_num_layers"]
                 self.string_dict["modes"] =  config["FNOGRU"]["modes"]
                 self.string_dict["input_channel"] =  config["FNOGRU"]["input_channel"]
                 self.string_dict["output_channel"] =  config["FNOGRU"]["output_channel"]
-                self.string_dict["dim_x"] = config["FNOGRU"]["dim_x"]
-                self.string_dict["projection_width"] = config["FNOGRU"]["projection_width"]
             case _:
                 pass
 

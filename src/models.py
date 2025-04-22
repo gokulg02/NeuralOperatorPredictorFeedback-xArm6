@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader
 from torch import nn
 import deepxde as dde
-from fourier import FNO1d
+from neuralop.models import FNO1d
 
 class DeepONetProjected(nn.Module):
     # m is typically set to nD*dof*3, dim_x is usually 1, and proj1, proj2 specify the projection of the linear layers. 
@@ -30,19 +30,16 @@ class DeepONetProjected(nn.Module):
         return y
 
 class FNOProjected(nn.Module):
-    def __init__(self, dim_x, hidden_size, modes, input_channel, output_channel, dof, nD):
+    def __init__(self, hidden_size, num_layers, modes, input_channel, output_channel, dof, nD):
         super().__init__()
         self.dof = dof
         self.nD = nD
-        self.fno = FNO1d(modes, hidden_size, dim_x, dim_x)
-        self.linear1 = torch.nn.Linear(input_channel, output_channel)
+        self.fno = FNO1d(n_modes_height=modes, n_layers=num_layers, hidden_channels=hidden_size, in_channels=input_channel, out_channels=output_channel)
 
     def forward(self, x):
-        x = x.reshape((x.shape[0], x.shape[1], 1))
-        y = self.fno(x)
-        y = y.reshape((y.shape[0], y.shape[1]))
-        y = self.linear1(y)
-        return y
+        # Flip for package library
+        y = self.fno(x.transpose(1, 2))
+        return y.transpose(1, 2)
         
 def ml_predictor_deeponet(_dt, state, controls, model):
     # The conversion time here actually can be expensive to go from CPU to GPU and back.
@@ -109,20 +106,20 @@ def ml_predictor_rnn(_dt, state, controls, model):
     return output[-1], output
 
 class FNOGRUNet(nn.Module):
-    def __init__(self, dim_x, num_layers, fno_hidden_size, gru_hidden_size, modes, input_channel, output_channel, dof, nD):
+    def __init__(self, fno_num_layers, gru_num_layers, fno_hidden_size, gru_hidden_size, modes, input_channel, output_channel, dof, nD):
         super().__init__()
         self.dof = dof
         self.nD = nD
-        self.fno = FNO1d(modes, fno_hidden_size, dim_x, dim_x)
-        self.rnn = nn.GRU(3*self.dof, gru_hidden_size, num_layers, batch_first=True)
+        self.fno = FNOProjected(fno_hidden_size, fno_num_layers, modes, input_channel, output_channel, dof, nD)
+        self.rnn = nn.GRU(output_channel, gru_hidden_size, gru_num_layers, batch_first=True)
         self.linear1 = torch.nn.Linear(gru_hidden_size, output_channel)
 
     def forward(self, x):
-        x = x.reshape((x.shape[0], x.shape[1], 1))
-        y = self.fno(x)
-        y = y.reshape((y.shape[0], self.nD, 3*self.dof))
-        y, _ = self.rnn(y)
-        return self.linear1(y)
+        fno_out= self.fno(x)
+        y, _ = self.rnn(fno_out)
+        y = self.linear1(y)
+        # time aware neural operator
+        return y 
  
 class DeepONetGRUNet(nn.Module):
     def __init__(self, dim_x, hidden_size, num_layers, n_input_channel, n_output_channel, projection_size, grid, dof, nD):

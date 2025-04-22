@@ -20,7 +20,7 @@ from baxter import Baxter
 sim_config_path = "../config/config.toml"
 sim_config = SimulationConfig(sim_config_path)
 
-model_config_path = "../config/deeponet.toml"
+model_config_path = "../config/fno.toml"
 model_config = ModelConfig(model_config_path)
 
 # Ensure that our data and model will live on the same cpu/gpu device. 
@@ -56,11 +56,11 @@ match model_config.model_type:
         model_config.update_config(input_channel=grid.shape[0], output_channel=sim_config.nD*2*sim_config.dof)
         model = DeepONetProjected(model_config.dim_x, model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, model_config.projection_width, grid, sim_config.dof, sim_config.nD)
     case "FNO":
-        model_config.update_config(input_channel=3*sim_config.dof*sim_config.nD, output_channel=sim_config.nD*2*sim_config.dof)
-        model = FNOProjected(model_config.dim_x, model_config.hidden_size, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+        model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
+        model = FNOProjected(model_config.hidden_size, model_config.num_layers, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
     case "FNO+GRU":
-        model_config.update_config(input_channel=3*sim_config.dof*sim_config.nD, output_channel=2*sim_config.dof)
-        model = FNOGRUNet(model_config.dim_x, model_config.num_layers, model_config.fno_hidden_size, model_config.gru_hidden_size, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+        model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
+        model = FNOGRUNet(model_config.fno_num_layers, model_config.gru_num_layers, model_config.fno_hidden_size, model_config.gru_hidden_size, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
     case _:
         raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
 
