@@ -7,7 +7,7 @@ from baxter import Baxter
 from config import SimulationConfig
 
 # Simulates the system
-def simulate_system(baxter, x0, q_des, q_desdot, q_desddot, dt, T, D, dof, predictor_func, model, randomize=False):
+def simulate_system(baxter, x0, q_des, q_desdot, q_desddot, dt, T, D, dof, predictor_func, model, randomize=False, deviation=0):
     t = np.arange(0, T, dt)
     q_vals = np.zeros((len(t), len(x0)))
     nD = int(round(D/dt))
@@ -23,7 +23,7 @@ def simulate_system(baxter, x0, q_des, q_desdot, q_desddot, dt, T, D, dof, predi
         if i > nD:
             if randomize:
                 prediction, predictions_arr = predictor_func(dt, q_vals[i-1], controls[i-1:i-1+nD], model) 
-                prediction = prediction + np.random.uniform(-0.1, 0.1, 2*dof)
+                prediction = prediction + np.random.uniform(-1*deviation, deviation, 2*dof)
             else:
                 prediction, predictions_arr = predictor_func(dt, q_vals[i-1], controls[i-1:i-1+nD], model) 
             controls[i-1+nD] = baxter.compute_control(prediction, q_des[i-1+nD], q_desdot[i-1+nD], q_desddot[i-1+nD])
@@ -75,9 +75,9 @@ def gen_dataset(num_data,baxter, dt, T, dof, D, scaling, period, joint_lim_min, 
             print("Total time spent", time.time()-start_time)
             last_time = time.time()
         num_trajs += 1
-        init_cond = init_cond = (joint_lim_max + joint_lim_min) / 2.0 + np.random.uniform(-0.1, 0.1,dof)
+        init_cond = init_cond = (joint_lim_max + joint_lim_min) / 2.0 
         init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof) 
-        states, controls, predictors = simulate_system(baxter, init_cond, q_des, qd_des, qdd_des, dt, T, D, dof, baxter.compute_predictors, None, randomize=False)
+        states, controls, predictors = simulate_system(baxter, init_cond, q_des, qd_des, qdd_des, dt, T, D, dof, baxter.compute_predictors, None, randomize=True, deviation=deviation)
         for i in range(len(sample_locs)):
             val = sample_locs[i]
             myStates = states[val-1] 
@@ -109,5 +109,5 @@ joint_lim_max = np.array([1.7016, 1.047, 3.0541, 2.618, 3.059, 2.094, 3.059])
 joint_lim_min = joint_lim_min[0:dof]
 joint_lim_max = joint_lim_max[0:dof]
 
-gen_dataset(sim_config.num_data, baxter, sim_config.dt, sim_config.T, dof, sim_config.D, sim_config.scaling, sim_config.period, joint_lim_min, joint_lim_max, 2, "testDataset")
+gen_dataset(sim_config.num_data, baxter, sim_config.dt, sim_config.T, dof, sim_config.D, sim_config.scaling, sim_config.period, joint_lim_min, joint_lim_max, sim_config.deviation, sim_config.dataset_filename)
 

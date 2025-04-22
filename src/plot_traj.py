@@ -62,6 +62,9 @@ sim_config = SimulationConfig(sim_config_path)
 model_config_path = "../config/gru.toml"
 model_config = ModelConfig(model_config_path)
 
+torch.set_default_device(model_config.device_name)
+
+
 # Baxter parameters
 dof = sim_config.dof
 alpha_mat = np.identity(dof)
@@ -84,9 +87,6 @@ init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof)
 predictor_type = "GRU"
 model_filename = model_config.model_filename
 
-# Set cuda or cpu device. Replace "cuda" with "cpu" to switch. MACOS uses cpu here even with builtin gpu. 
-torch.set_default_device("cuda")
-device = torch.device("cuda")
 
 match predictor_type:
     case "numerical":
