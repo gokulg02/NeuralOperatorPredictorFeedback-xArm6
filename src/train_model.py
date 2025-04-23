@@ -20,7 +20,7 @@ from baxter import Baxter
 sim_config_path = "../config/config.toml"
 sim_config = SimulationConfig(sim_config_path)
 
-model_config_path = "../config/fno.toml"
+model_config_path = "../config/fnogru.toml"
 model_config = ModelConfig(model_config_path)
 
 # Ensure that our data and model will live on the same cpu/gpu device. 

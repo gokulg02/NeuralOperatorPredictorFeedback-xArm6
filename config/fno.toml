@@ -1,10 +1,10 @@
 [model]
 model_filename="fno"
 model_type="FNO"
-epochs=150
-learning_rate=0.0008
-weight_decay=1.5e-5
-gamma=0.999
+epochs=250
+learning_rate=3e-3
+weight_decay=2e-6
+gamma=0.99
 iters_dag=5
 epochs_dag=50
 learning_rate_dag=3e-3
@@ -13,10 +13,9 @@ gamma_dag=0.98
 device_name="cuda"
 
 [FNO]
-hidden_size=32
-modes=16
+hidden_size=128
+modes=20
+num_layers=2
 # Will be overwritten such that input_channel = 3*dof and output_channel = 2*dof
 input_channel=0
 output_channel=0
-dim_x=1
-projection_width=48
