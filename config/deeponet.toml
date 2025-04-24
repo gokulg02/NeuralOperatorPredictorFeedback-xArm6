@@ -1,9 +1,9 @@
 [model]
 model_filename="deeponet"
 model_type="DeepONet"
-epochs=150
-learning_rate=0.0008
-weight_decay=1.5e-5
+epochs=500
+learning_rate=8e-4
+weight_decay=1e-4
 gamma=0.999
 iters_dag=5
 epochs_dag=50

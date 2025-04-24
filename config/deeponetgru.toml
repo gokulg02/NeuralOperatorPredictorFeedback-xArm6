@@ -1,10 +1,10 @@
 [model]
-model_filename="fno"
-model_type="FNO"
-epochs=400
-learning_rate=5e-3
+model_filename="deeponetgru"
+model_type="DeepONet+GRU"
+epochs=500
+learning_rate=3e-4
 weight_decay=0
-gamma=0.99
+gamma=1
 iters_dag=5
 epochs_dag=50
 learning_rate_dag=3e-3
@@ -12,10 +12,12 @@ weight_decay_dag=1.5e-2
 gamma_dag=0.98
 device_name="cuda"
 
-[FNO]
-hidden_size=64
-modes=12
-num_layers=4
+[DeepONetGRU]
+dim_x=1
+deeponet_hidden_size=512
+deeponet_num_layers=5
+gru_num_layers=5
+gru_hidden_size=64
 # Will be overwritten such that input_channel = 3*dof and output_channel = 2*dof
 input_channel=0
 output_channel=0

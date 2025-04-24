@@ -91,15 +91,12 @@ class ModelConfig:
                 self.string_dict["hidden_size"] =  config["GRU"]["hidden_size"]
                 self.string_dict["input_channel"] =  config["GRU"]["input_channel"]
                 self.string_dict["output_channel"] =  config["GRU"]["output_channel"]
-                self.string_dict["dim_x"] = None
-                self.string_dict["projection_width"] = None
             case "DeepONet":
                 self.string_dict["num_layers"] =  config["DeepONet"]["num_layers"]
                 self.string_dict["hidden_size"] =  config["DeepONet"]["hidden_size"]
                 self.string_dict["input_channel"] =  config["DeepONet"]["input_channel"]
                 self.string_dict["output_channel"] =  config["DeepONet"]["output_channel"]
                 self.string_dict["dim_x"] = config["DeepONet"]["dim_x"]
-                self.string_dict["projection_width"] = config["DeepONet"]["projection_width"]
             case "FNO":
                 self.string_dict["num_layers"] = config["FNO"]["num_layers"]
                 self.string_dict["hidden_size"] =  config["FNO"]["hidden_size"]
@@ -114,6 +111,15 @@ class ModelConfig:
                 self.string_dict["modes"] =  config["FNOGRU"]["modes"]
                 self.string_dict["input_channel"] =  config["FNOGRU"]["input_channel"]
                 self.string_dict["output_channel"] =  config["FNOGRU"]["output_channel"]
+            case "DeepONet+GRU":
+                self.string_dict["gru_num_layers"] =  config["DeepONetGRU"]["gru_num_layers"]
+                self.string_dict["deeponet_num_layers"] =  config["DeepONetGRU"]["deeponet_num_layers"]
+                self.string_dict["gru_hidden_size"] =  config["DeepONetGRU"]["gru_hidden_size"]
+                self.string_dict["deeponet_hidden_size"] =  config["DeepONetGRU"]["deeponet_hidden_size"]
+                self.string_dict["input_channel"] =  config["DeepONetGRU"]["input_channel"]
+                self.string_dict["output_channel"] =  config["DeepONetGRU"]["output_channel"]
+                self.string_dict["dim_x"] = config["DeepONetGRU"]["dim_x"]
+ 
             case _:
                 pass
 

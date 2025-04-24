@@ -1,9 +1,9 @@
 [model]
 model_filename="fnogru"
 model_type="FNO+GRU"
-epochs=250
+epochs=400
 learning_rate=5e-3
-weight_decay=2e-4
+weight_decay=0
 gamma=0.99
 iters_dag=5
 epochs_dag=50

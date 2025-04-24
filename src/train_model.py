@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch import nn
 import torchtune
 
-from models import GRUNet, LSTMNet, DeepONetProjected, FNOProjected, FNOGRUNet, ml_predictor_rnn
+from models import GRUNet, LSTMNet, DeepONetProjected, FNOProjected, FNOGRUNet, DeepONetGRUNet, ml_predictor_rnn
 from trainer import model_trainer, evaluate_model
 from config import SimulationConfig, ModelConfig
 from dataset import gen_dataset_dagger
@@ -20,7 +20,7 @@ from baxter import Baxter
 sim_config_path = "../config/config.toml"
 sim_config = SimulationConfig(sim_config_path)
 
-model_config_path = "../config/fnogru.toml"
+model_config_path = "../config/deeponetgru.toml"
 model_config = ModelConfig(model_config_path)
 
 # Ensure that our data and model will live on the same cpu/gpu device. 
@@ -54,15 +54,20 @@ match model_config.model_type:
         spatial = np.arange(0, sim_config.D, sim_config.dt/(3*sim_config.dof)).astype(np.float32)
         grid=torch.from_numpy(spatial.reshape((len(spatial), 1))).to(sim_config.device)
         model_config.update_config(input_channel=grid.shape[0], output_channel=sim_config.nD*2*sim_config.dof)
-        model = DeepONetProjected(model_config.dim_x, model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, model_config.projection_width, grid, sim_config.dof, sim_config.nD)
+        model = DeepONetProjected(model_config.dim_x, model_config.hidden_size, model_config.num_layers, model_config.input_channel, model_config.output_channel, grid, sim_config.dof, sim_config.nD)
     case "FNO":
         model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
         model = FNOProjected(model_config.hidden_size, model_config.num_layers, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
     case "FNO+GRU":
         model_config.update_config(input_channel=3*sim_config.dof, output_channel=2*sim_config.dof)
         model = FNOGRUNet(model_config.fno_num_layers, model_config.gru_num_layers, model_config.fno_hidden_size, model_config.gru_hidden_size, model_config.modes, model_config.input_channel, model_config.output_channel, sim_config.dof, sim_config.nD)
+    case "DeepONet+GRU":
+        spatial = np.arange(0, sim_config.D, sim_config.dt/(3*sim_config.dof)).astype(np.float32)
+        grid=torch.from_numpy(spatial.reshape((len(spatial), 1))).to(sim_config.device)
+        model_config.update_config(input_channel=grid.shape[0], output_channel=sim_config.nD*2*sim_config.dof)
+        model = DeepONetGRUNet(model_config.dim_x, model_config.deeponet_num_layers, model_config.gru_num_layers, model_config.deeponet_hidden_size, model_config.gru_hidden_size, model_config.input_channel, model_config.output_channel, grid, sim_config.dof, sim_config.nD)
     case _:
-        raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, GRU+DeepONet, GRU+FNO.")
+        raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
 
 model.to(sim_config.device)
 print("Model parameters:", sum(p.numel() for p in model.parameters() if p.requires_grad))

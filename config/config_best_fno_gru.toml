@@ -4,12 +4,12 @@ T=10
 scaling=0.1
 period=1
 dt=0.1
-D=0.5
+D=0.3
 
 [dataset]
-num_data=500000
+num_data=250000
 deviation=0.05
-dataset_filename="5DOFDelayTrajCondRandomized0.05ToMinus0.05500k"
+dataset_filename="5DOF3SecDelayTrajCondRandomized0.05ToMinus0.05500k"
 test_size=0.1
 batch_size=1024
 random_state=1

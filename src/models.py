@@ -11,22 +11,21 @@ from neuralop.models import FNO1d
 
 class DeepONetProjected(nn.Module):
     # m is typically set to nD*dof*3, dim_x is usually 1, and proj1, proj2 specify the projection of the linear layers. 
-    def __init__(self, dim_x, hidden_size, num_layers, n_input_channel, n_output_channel, projection_size, grid, dof, nD):
+    def __init__(self, dim_x, hidden_size, num_layers, n_input_channel, n_output_channel, grid, dof, nD):
         super().__init__()
         self.dof = dof
         self.nD = nD
-        width = 256
         self.grid = grid
         inputArr = [hidden_size]*num_layers
         outputArr = [hidden_size]*num_layers
         inputArr[0] = n_input_channel
         outputArr[0] = dim_x
         self.deeponet = dde.nn.DeepONetCartesianProd(inputArr, outputArr, "relu", "Glorot normal")
-        self.linear1 = torch.nn.Linear(n_input_channel, n_output_channel)
+        self.out = torch.nn.Sequential(torch.nn.Linear(n_input_channel, 4 * n_output_channel),torch.nn.ReLU(),torch.nn.Linear(4 * n_output_channel, n_output_channel))
 
     def forward(self, x):
         y = self.deeponet(x)
-        y = self.linear1(y)
+        y = self.out(y)
         return y
 
 class FNOProjected(nn.Module):
@@ -51,7 +50,7 @@ def ml_predictor_deeponet(_dt, state, controls, model):
     inputs = inputs.reshape((1, controls.shape[0]*dof*3)).astype(np.float32)
     inputs = torch.from_numpy(inputs).cuda()
     with torch.no_grad():
-    	output = model((inputs, model.grid)).detach().cpu().numpy().reshape(nD, 2*dof)
+        output = model((inputs, model.grid)).detach().cpu().numpy().reshape(nD, 2*dof)
     return output[-1], output
 
 def ml_predictor_fno(_dt, state, controls, model):
@@ -64,7 +63,7 @@ def ml_predictor_fno(_dt, state, controls, model):
     inputs = inputs.reshape((1, controls.shape[0]*dof*3, 1)).astype(np.float32)
     inputs = torch.from_numpy(inputs).cuda()
     with torch.no_grad():
-    	output = model(inputs).detach().cpu().numpy().reshape(nD, 2*dof)
+        output = model(inputs).detach().cpu().numpy().reshape(nD, 2*dof)
     return output[-1], output
 
 class GRUNet(nn.Module):
@@ -122,21 +121,17 @@ class FNOGRUNet(nn.Module):
         return y 
  
 class DeepONetGRUNet(nn.Module):
-    def __init__(self, dim_x, hidden_size, num_layers, n_input_channel, n_output_channel, projection_size, grid, dof, nD):
+    def __init__(self, dim_x, deeponet_num_layers, gru_num_layers, deeponet_hidden_size, gru_hidden_size, n_input_channel, n_output_channel, grid, dof, nD):
         super().__init__()
         self.dof = dof
         self.nD = nD
         self.grid = grid
-        inputArr = [hidden_size]*num_layers
-        outputArr = [hidden_size]*num_layers
-        inputArr[0] = n_input_channel
-        outputArr[0] = dim_x
-        self.deeponet = dde.nn.DeepONetCartesianProd(inputArr, outputArr, "relu", "Glorot normal")
-        self.rnn = nn.GRU(n_input_channel, gru_hidden_size, num_layers, batch_first=True)
-        self.linear1 = torch.nn.Linear(gru_hidden_size, n_output_channel)
+        self.deeponet = DeepONetProjected(dim_x, deeponet_hidden_size, deeponet_num_layers, n_input_channel, n_output_channel, grid, dof, nD)
+        self.rnn = nn.GRU(2*dof, gru_hidden_size, gru_num_layers, batch_first=True)
+        self.linear1 = torch.nn.Linear(gru_hidden_size,2*dof)
 
     def forward(self, x):
-        op_out = self.deeponet(x)
-        y, _ = self.rnn(y)
-        return self.linear1(y) +op_out
+        deeponet_out = self.deeponet(x).reshape(x[0].shape[0], self.nD, 2*self.dof)
+        y, _ = self.rnn(deeponet_out)
+        return self.linear1(y)
  
