@@ -61,6 +61,7 @@ sim_config = SimulationConfig(sim_config_path)
 
 model_config_path = "../config/fnogru.toml"
 model_config = ModelConfig(model_config_path)
+predictor_type = "FNO+GRU"
 
 torch.set_default_device(model_config.device_name)
 
@@ -84,7 +85,6 @@ init_cond = np.array([init_cond, np.zeros(dof)]).reshape(2*dof)
 
 # Setup type of predictor. If using ML, make sure to modify the parameters below in the match statement to
 # load the correct model
-predictor_type = "FNO+GRU"
 model_filename = model_config.model_filename
 
 

@@ -1,7 +1,7 @@
 [model]
 model_filename="deeponetgru"
 model_type="DeepONet+GRU"
-epochs=500
+epochs=750
 learning_rate=3e-4
 weight_decay=0
 gamma=1

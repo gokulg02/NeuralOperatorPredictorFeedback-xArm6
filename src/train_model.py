@@ -20,7 +20,7 @@ from baxter import Baxter
 sim_config_path = "../config/config.toml"
 sim_config = SimulationConfig(sim_config_path)
 
-model_config_path = "../config/deeponetgru.toml"
+model_config_path = "../config/deeponet.toml"
 model_config = ModelConfig(model_config_path)
 
 # Ensure that our data and model will live on the same cpu/gpu device. 
