@@ -1,0 +1,23 @@
+[model]
+model_filename="fnogru"
+model_type="FNO+GRU"
+epochs=250
+learning_rate=5e-3
+weight_decay=2e-4
+gamma=0.99
+iters_dag=5
+epochs_dag=50
+learning_rate_dag=3e-3
+weight_decay_dag=1.5e-2
+gamma_dag=0.98
+device_name="cuda"
+
+[FNOGRU]
+fno_hidden_size=32
+modes=12
+fno_num_layers=4
+gru_num_layers=5
+gru_hidden_size=64
+# Will be overwritten such that input_channel = 3*dof and output_channel = 2*dof
+input_channel=0
+output_channel=0

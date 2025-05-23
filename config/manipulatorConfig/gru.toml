@@ -1,0 +1,20 @@
+[model]
+model_filename="gru"
+model_type="GRU"
+epochs=150
+learning_rate=0.0095
+weight_decay=5e-6
+gamma=0.98
+iters_dag=5
+epochs_dag=50
+learning_rate_dag=0.0095
+weight_decay_dag=5e-6
+gamma_dag=0.98
+device_name="cuda"
+
+[GRU]
+hidden_size=64
+num_layers=5
+# Will be overwritten such that input_channel = 3*dof and output_channel = 2*dof
+input_channel=0
+output_channel=0

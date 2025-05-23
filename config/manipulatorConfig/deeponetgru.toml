@@ -1,0 +1,15 @@
+[train]
+model_filename="deeponetgru"
+model_type="DeepONet+GRU"
+epochs=750
+learning_rate=2e-4
+weight_decay=0
+gamma=0.995
+device_name="cuda"
+
+[DeepONetGRU]
+dim_x=1
+deeponet_hidden_size=512
+deeponet_num_layers=5
+gru_num_layers=5
+gru_hidden_size=64

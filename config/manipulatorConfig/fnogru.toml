@@ -1,0 +1,15 @@
+[train]
+model_filename="fnogruMoreEpochs"
+model_type="FNO+GRU"
+epochs=400
+learning_rate=5e-3
+weight_decay=0
+gamma=0.99
+device_name="cuda"
+
+[FNOGRU]
+fno_hidden_size=64
+modes=12
+fno_num_layers=4
+gru_num_layers=4
+gru_hidden_size=64

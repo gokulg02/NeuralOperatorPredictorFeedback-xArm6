@@ -1,0 +1,13 @@
+[train]
+model_filename="fno"
+model_type="FNO"
+epochs=400
+learning_rate=5e-3
+weight_decay=0
+gamma=0.99
+device_name="cuda"
+
+[FNO]
+hidden_size=64
+modes=12
+num_layers=4

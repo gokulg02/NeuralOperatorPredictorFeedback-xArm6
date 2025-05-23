@@ -1,11 +1,11 @@
 import numpy as np
 import math
 
-# Creates a Baxter robot. Implementation is based on 
+# Creates a Manipulator robot. Implementation is based on Baxter robot
 # https://ieeexplore.ieee.org/document/7558740
-# "Development of a dynamics model for the Baxter robot" by Smith Et. Al.
+# "Development of a dynamics model for the Manipulator robot" by Smith Et. Al.
 
-class Baxter:
+class Manipulator:
     def __init__(self, dof, alpha_mat, beta_mat):
         coms = np.array([[-0.05117, 0.07908, 0.00086, 1],\
                  [0.00269, -0.00529, 0.06845, 1],\

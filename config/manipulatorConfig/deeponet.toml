@@ -1,0 +1,13 @@
+[train]
+model_filename="deeponet"
+model_type="DeepONet"
+epochs=400
+learning_rate=5e-3
+weight_decay=0
+gamma=0.99
+device_name="cuda"
+
+[DeepONet]
+hidden_size=1024
+num_layers=5
+dim_x=1

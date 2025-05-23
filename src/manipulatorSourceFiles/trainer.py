@@ -88,10 +88,10 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
         if test_loss <= best_test_loss:
             bestModelDict = model.state_dict()
             best_test_loss = test_loss
-    torch.save(bestModelDict,"../models/" + model_filename)
+    torch.save(bestModelDict,"../../models/ManipulatorModels" + model_filename)
     return model, train_lossArr, test_lossArr
     
-def evaluate_model(model, name, train_lossArr, test_lossArr):
+def evaluate_train_performance(model, name, train_lossArr, test_lossArr):
     print("Evaluating model", name)
     # Display Model Details
     plt.figure()
@@ -105,3 +105,56 @@ def evaluate_model(model, name, train_lossArr, test_lossArr):
         
     print("Final Testing Loss:", test_lossArr[-1])
     print("Final Training Loss:", train_lossArr[-1])
+
+def evaluate_model(model, model_type, trainData, testData):
+    loss = torch.nn.MSELoss()
+    train_loss = 0
+    test_loss= 0
+    match model_type:
+        case "DeepONet":
+            grid = model.grid
+        case "FNO+GRU" | "FNO":
+            nD = model.nD
+            dof = model.dof
+        case "DeepONet+GRU":
+            grid = model.grid
+            nD = model.nD
+            dof = model.dof
+        case _:
+            raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
+    with torch.no_grad():
+        for x_vals, y_vals in trainData:
+            match model_type:
+                case "DeepONet":
+                    out = model((x_vals, grid))
+                case "GRU" | "LSTM" | "FNO" | "FNO+GRU":
+                    x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
+                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                    out = model(x_vals)
+                case "DeepONet+GRU":
+                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                    out = model((x_vals, grid))
+                case _:
+                    raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
+    
+            train_loss += loss(out, y_vals).item()
+            
+    with torch.no_grad():
+        for x_vals, y_vals in testData:
+            match model_type:
+                case "DeepONet":
+                    out = model((x_vals, grid))
+                case "GRU" | "LSTM" | "FNO" | "FNO+GRU":
+                    x_vals = x_vals.reshape(x_vals.shape[0], nD, 3*dof)
+                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                    out = model(x_vals)
+                case "DeepONet+GRU":
+                    y_vals = y_vals.reshape(y_vals.shape[0], nD, 2*dof)
+                    out = model((x_vals, grid))
+                case _:
+                    raise Exception("Model type not supported. Please use GRU, FNO, DeepONet, LSTM, DeepONet+GRU, FNO+GRU.")
+            test_loss += loss(out, y_vals).item()
+                
+        train_loss /= len(trainData)
+        test_loss /= len(testData)
+    return train_loss, test_loss
