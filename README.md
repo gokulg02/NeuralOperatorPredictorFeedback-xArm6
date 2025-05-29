@@ -14,11 +14,11 @@
  <a href="#"><img alt="Main result from the paper" src="media/manipulatorFig.jpg" width="100%"/></a>
 </div>
 
+<br> 
 
-
-[Paper](https://arxiv.org/pdf/2411.18964 |
+[Paper](https://arxiv.org/pdf/2411.18964) |
 [GitHub](https://github.com/lukebhan/NeuralOperatorPredictorFeedback) |
-[arXiv](https://arxiv.org/pdf/2411.18964 |
+[arXiv](https://arxiv.org/pdf/2411.18964) |
 Published in L4DC 2025 (Oral) + Submitted to IEEE TAC.
 
 ## Introduction
@@ -60,13 +60,17 @@ files in the dataset and models folders of this repository (See below for struct
   ```
 
 
-# Unicycle Example - Constant and Time-Varying Delays
+## Unicycle Example - Constant and Time-Varying Delays
 See `examples` folder for two notebooks that have implementations of neural operator predictors for both constant and time-varying delays for the
-unicycle system. These models are quick to train and thus can be run with any modern GPU system (and higher end laptops). 
-we provide both pretrained models as well as the corresponding datasets to make your own at 
-- [Dataset](https://huggingface.co/datasets/lukebhan/generalizableMotionPlanning)
-- [Models](https://huggingface.co/lukebhan/generalizableMotionPlanningViaOperatorLearning)
+unicycle system. These models are quick to train and thus can be run with any modern GPU system (and higher end laptops) although we do provide pretrained models for 
+those who are interested. The Jupyter-notebooks should be self-explanatory as they have section headers guiding one through each portion of the code. 
 
+## Manipulator Example - Constant Delays
+See `examples` folder for a third notebook that replicates the manipulator results for a 5DOF manipulator that contains the same parameters as a single arm of a Baxter manipulator without the last two joints. To generate a dataset for the manipulator, it takes significant computation time as the example's forward dynamics are expensive. Furthermore, for the models, they can be trained either through the notebook or using the  `train_model.py` file
+given that one modifies the configuration. Without significant computing resources, it is not recommended that the user develops their own models for the manipulator. 
+
+## Assistance / Troubleshooting
+If you have any issues with any of the notebooks or models in this repo, feel free to create an issue in this github repo or email lbhan@ucsd.edu and I am more than happy to assist! 
 
 ### Citation 
 If you found this work useful or interesting for your own research, we would appreciate if you could cite our work:
