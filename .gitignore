@@ -1,3 +1,8 @@
 datasets/ManipulatorDatasets/
 datasets/UnicycleTimeVaryingDelayDataset/
 datasets/UnicycleConstDelayDataset/
+
+models/ManipulatorModels/
+models/UnicycleTimeVaryingDelayModels/
+models/UnicycleConstDelayModels/
+**/__pycache__/
