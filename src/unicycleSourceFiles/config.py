@@ -40,6 +40,13 @@ class SimulationConfig:
                 "test_size": config["dataset"]["test_size"]
                 }
 
+        if "phi" in config["dynamics"]:
+            self.string_dict["phi"] =  config["dynamics"]["phi"]
+            self.string_dict["phi_inv"] = config["dynamics"]["phi_inv"]
+            self.string_dict["phi_inv_deriv"] = config["dynamics"]["phi_inv_deriv"]
+            self.string_dict["a"] = config["dynamics"]["a"]
+            self.string_dict["b"] = config["dynamics"]["b"]
+
     def update_config(self, **kwargs):
         for k, val in kwargs.items():
             try:

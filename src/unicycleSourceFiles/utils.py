@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import numpy as np
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 def set_size(width, fraction=1, subplots=(1, 1), height_add=0):
     """Set figure dimensions to avoid scaling in LaTeX.
@@ -54,6 +56,136 @@ linestyle_tuple = [
      ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),#10
      ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),#11
      ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]#12
+     
+     
+
+
+def plot_trajectory_time_varying(t, u_delay, u_delay_ml, control_delay, control_delay_ml, predictors, predictors_ml, savefig=None):
+    fig = plt.figure(figsize=set_size(516, 0.99, (3, 2), height_add=0))
+    gs = gridspec.GridSpec(3, 6, height_ratios=[1, 1, 1])  # 2 rows, 3 columns
+
+    ax1 = fig.add_subplot(gs[0, 0:2])
+    ax2 = fig.add_subplot(gs[0, 2:4])
+    ax3 = fig.add_subplot(gs[0, 4:6])
+    ax4 = fig.add_subplot(gs[1, 0:2])
+    ax5 = fig.add_subplot(gs[1, 2:4])
+    ax6 = fig.add_subplot(gs[1, 4:6])
+
+    ax7 = fig.add_subplot(gs[2, 0:3])  # Spans columns 0 and 1
+    ax8 = fig.add_subplot(gs[2, 3:6])    # Just column 2
+    
+
+    style1 = {'color': 'tab:green', 'linestyle': linestyle_tuple[2][1], 'linewidth': 2}
+    style2 = {'color': 'tab:orange', 'linestyle': linestyle_tuple[5][1], 'linewidth': 2, 'alpha': 0.7}
+
+    ax1.plot(t, u_delay[:, 0], label="Const delay", **style1)
+    ax1.plot(t, u_delay_ml[:, 0], label="Const delay ML", **style2)
+    ax1.set_ylabel(r"$x(t)$")
+    ax1.set_xlabel("t")
+    ax1.set_xticks([0, 2.5, 5, 7.5, 10])
+    ax1.set_yticks([1, 0.5, 0, -0.5, -1])
+
+    ax2.plot(t, u_delay[:, 1], **style1)
+    ax2.plot(t, u_delay_ml[:, 1], **style2)
+    ax2.set_ylabel(r"$y(t)$", labelpad=-3)
+    ax2.set_xlabel("t")
+    ax2.set_xticks([0, 2.5, 5, 7.5, 10])
+    ax2.set_yticks([-0.5, 0, 0.5, 1])
+    
+    
+    # Create inset axes (zoom factor = 2)
+    axins = inset_axes(ax2, width="30%", height="30%", bbox_to_anchor=(-0.2, -0.2, 1,1),  # (x0, y0, width, height)
+                   bbox_transform=ax2.transAxes,
+                   borderpad=0)  # Location of inset
+    axins.plot(t, u_delay[:, 1], **style1)
+    axins.plot(t, u_delay_ml[:, 1], **style2)
+    
+
+    # Limit the region shown in inset
+    x1, x2 = 5.5, 6   # x-range for zoom
+    y1, y2 = -0.1, -0.05  # y-range for zoom
+    axins.set_xlim(x1, x2)
+    axins.set_ylim(y1, y2)
+
+    # Hide tick labels for the inset
+    axins.set_xticks([])
+    axins.set_yticks([])
+
+    # Draw lines connecting inset to main plot
+    mark_inset(ax2, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+
+    ax3.plot(t, u_delay[:, 2], **style1)
+    ax3.plot(t, u_delay_ml[:, 2], **style2)
+    ax3.set_xlabel("t")
+    ax3.set_ylabel(r"$\theta(t)$", labelpad=-1)
+    ax3.set_yticks([0, 0.25, 0.5, 0.75, 1])
+    ax3.set_xticks([0, 2.5, 5, 7.5, 10])
+    
+    ax4.plot(t, predictors[:, -1, 0], label="Const delay", **style1)
+    ax4.plot(t, predictors_ml[:, -1, 0], label="Const delay ML", **style2)
+    ax4.set_ylabel(r"$P_1(t) \approx x(t+D(t))$")
+    ax4.set_xlabel("t")
+    ax4.set_xticks([0, 2.5, 5, 7.5, 10])
+    ax4.set_yticks([1, 0.5, 0, -0.5, -1])
+
+    
+    ax5.plot(t, predictors[:, -1, 0], label="Const delay", **style1)
+    ax5.plot(t, predictors_ml[:, -1, 0], label="Const delay ML", **style2)
+    ax5.set_ylabel(r"$P_2(t) \approx y(t+D(t))$", labelpad=-3)
+    ax5.set_xlabel("t")
+    ax5.set_xticks([0, 2.5, 5, 7.5, 10])
+    ax5.set_yticks([-0.5, 0, 0.5, 1])
+    
+        # Create inset axes (zoom factor = 2)
+    axins2 = inset_axes(ax5, width="30%", height="30%", bbox_to_anchor=(-0.2, -0.2, 1,1),  # (x0, y0, width, height)
+                   bbox_transform=ax5.transAxes,
+                   borderpad=0)  # Location of inset
+    axins2.plot(t, predictors[:, -1, 0], label="Const delay", **style1)
+    axins2.plot(t, predictors_ml[:, -1, 0], label="Const delay ML", **style2)
+    
+
+    # Limit the region shown in inset
+    x1, x2 = 5.5, 6   # x-range for zoom
+    y1, y2 = 0., 0.1  # y-range for zoom
+    axins2.set_xlim(x1, x2)
+    axins2.set_ylim(y1, y2)
+
+    # Hide tick labels for the inset
+    axins2.set_xticks([])
+    axins2.set_yticks([])
+    mark_inset(ax5, axins2, loc1=2, loc2=4, fc="none", ec="0.5")
+    
+    ax6.plot(t, predictors[:, -1, 0], label="Const delay", **style1)
+    ax6.plot(t, predictors_ml[:, -1, 0], label="Const delay ML", **style2)
+    ax6.set_xlabel("t")
+    ax6.set_ylabel(r"$P_3(t) \approx \theta(t+D(t))$", labelpad=-1)
+    ax6.set_yticks([0, 0.25, 0.5, 0.75, 1])
+    ax6.set_xticks([0, 2.5, 5, 7.5, 10])
+    plt.subplots_adjust(hspace=0.5, left=0.1, right=0.98, top=0.95, bottom=0.14, wspace=1)
+
+    ax7.plot(t, control_delay[:, 0], **style1)
+    ax7.plot(t, control_delay_ml[:, 0], **style2)
+    ax7.set_xlabel("t")
+    ax7.set_ylabel(r"$\nu_1(t)$")
+    ax7.set_yticks([-3, -1.5, 0, 1.5])
+    ax7.set_xticks([0, 2.5, 5, 7.5, 10])
+
+    l1, = ax8.plot(t, control_delay[:, 1], label="Successive Approximations", **style1)
+    l2, = ax8.plot(t, control_delay_ml[:, 1], label="FNO", **style2)
+    ax8.set_xlabel("t")
+    ax8.set_ylabel(r"$\nu_2(t)$", labelpad=-3)
+    ax8.set_yticks([-3, -2, -1,0,1])
+    ax8.set_xticks([0, 2.5, 5, 7.5, 10])
+    fig.text(0.5, 0.98, "System states", va='center', ha='center', fontsize=16)
+    fig.text(0.5, 0.66, "Predictions", va='center', ha='center', fontsize=16)
+    fig.text(0.5, 0.37, "Control Inputs", va='center', ha='center', fontsize=16)
+
+    # Add a horizontal legend below all subplots
+    fig.legend(handles=[l1, l2],loc='lower center',ncol=3,fontsize=10, frameon=True,fancybox=True, shadow=False,bbox_to_anchor=(0.5, 0.02))
+    if savefig is not None:
+        plt.savefig(savefig, dpi=300)
+    plt.show()
+ 
 
 
 def plot_trajectory(t, u_delay, u_delay_ml, control_delay, control_delay_ml, savefig=None):
@@ -169,27 +301,40 @@ def plot_trajectory_with_errors(t, u_delay, u_delay_ml, control_delay, control_d
     ax5.set_yticks([-2, -1, 0, 1, 2])
     ax5.set_xticks([0, 2.5, 5, 7.5, 10])
 
+    # Calculate all absolute error data
+    error_x = abs(predictor[0:-nD+2, -1, 0] - u_delay[nD-2:, 0])
+    error_x_ml = abs(predictor_ml[0:-nD+2, -1, 0] - u_delay[nD-2:, 0])
+
+    error_y = abs(predictor[0:-nD+2, -1, 1] - u_delay[nD-2:, 1])
+    error_y_ml = abs(predictor_ml[0:-nD+2, -1, 1] - u_delay[nD-2:, 1])
+
+    error_theta = abs(predictor[0:-nD+2, -1, 2] - u_delay[nD-2:, 2])
+    error_theta_ml = abs(predictor_ml[0:-nD+2, -1, 2] - u_delay[nD-2:, 2])
+
+    # Combine all errors to find global min and max
+    all_errors = np.concatenate([error_x, error_x_ml, error_y, error_y_ml, error_theta, error_theta_ml])
+    ymin, ymax = np.min(all_errors), np.max(all_errors)
+
     ax6.plot(t[0:-nD+2], abs(predictor[0:-nD+2, -1, 0]-u_delay[nD-2:, 0]), label="Const delay", **style1)
     ax6.plot(t[0:-nD+2], abs(predictor_ml[0:-nD+2,-1, 0]-u_delay[nD-2:, 0]), **style2)
     ax6.set_ylabel(r"$|x(t+D)-\hat{P}(t)|$")
     ax6.set_xlabel("time")
     ax6.set_xticks([0, 2.5, 5, 7.5, 10])
-    ax6.set_yticks([0, 0.05, 0.1])
+    ax6.set_ylim(ymin, ymax)
 
     ax7.plot(t[0:-nD+2], abs(predictor[0:-nD+2, -1, 1]-u_delay[nD-2:, 1]), label="Const delay", **style1)
     ax7.plot(t[0:-nD+2], abs(predictor_ml[0:-nD+2,-1, 1]-u_delay[nD-2:, 1]), **style2)
     ax7.set_ylabel(r"$|y(t+D)-\hat{P}(t)|$")
     ax7.set_xlabel("time")
     ax7.set_xticks([0, 2.5, 5, 7.5, 10])
-    ax7.set_yticks([0, 0.05, 0.1])
+    ax7.set_ylim(ymin, ymax)
 
     ax8.plot(t[0:-nD+2], abs(predictor[0:-nD+2, -1, 2]-u_delay[nD-2:, 2]), label="Const delay", **style1)
     ax8.plot(t[0:-nD+2], abs(predictor_ml[0:-nD+2,-1, 2]-u_delay[nD-2:, 2]), **style2)
     ax8.set_xlabel("time")
     ax8.set_ylabel(r"$|\theta(t+D)-\hat{P}(t)|$")
     ax8.set_xticks([0, 2.5, 5, 7.5, 10])
-    ax8.set_yticks([0, 0.05, 0.1])
-
+    ax8.set_ylim(ymin, ymax)
     # Add a horizontal legend below all subplots
     fig.legend(handles=[l1, l2],loc='lower center',ncol=3,fontsize=10, frameon=True,fancybox=True, shadow=False,bbox_to_anchor=(0.5, -0.05))
     plt.tight_layout()

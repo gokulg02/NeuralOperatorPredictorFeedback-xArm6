@@ -58,7 +58,7 @@ linestyle_tuple = [
 
 def plot_trajectory(link, t, nD, qdes, model_states, numerical_states, \
                  model_predictors, numerical_predictors, model_controls, numerical_controls, model_name, saveFig=None):
-    fig = plt.figure(figsize=set_size(433, 0.99, (2,2), height_add=0.5))
+    fig = plt.figure(figsize=set_size(516, 0.99, (2,2)))
     subfigs = fig.subfigures(nrows=2, ncols=1, hspace=0)
     subfig = subfigs[0]
     

@@ -34,7 +34,7 @@ def predictor_non_const_delay(cur_state, control_history, D, x, _model=None):
         res[i] = res[0] + D*np.array([np.trapz(integral_tmp[0:i+1, 0], x=x[0:i+1]), \
                                       np.trapz(integral_tmp[0:i+1, 1], x=x[0:i+1]),\
                                       np.trapz(integral_tmp[0:i+1, 2], x=x[0:i+1])])
-    return res[-1]
+    return res
 
 
 def simulate_system_no_delay(init_cond, dt, T):
@@ -70,7 +70,7 @@ def simulate_system_const_delay(init_cond, dt, T, dx, D, predictor_func=None, mo
     return u, controls, pde_sol, predictions
     
 def simulate_system_non_const_delay(init_cond, dt, T, dx, delay_funcs, args, predictor_func=None, model=None):
-    phi_inv, phi_inv_deriv = delay_funcs[0], delay_funcs[1]
+    phi, phi_inv, phi_inv_deriv = delay_funcs[0], delay_funcs[1], delay_funcs[2]
     t = np.arange(0, T, dt)
     x = np.arange(0, 1, dx)
     nx = len(x)
@@ -81,19 +81,17 @@ def simulate_system_non_const_delay(init_cond, dt, T, dx, delay_funcs, args, pre
     predictions = np.zeros((nt, nx, 3))
     delays = np.zeros((nt))
     u[0] = init_cond
+    if predictor_func is None:
+        predictor_func = predictor_non_const_delay
     for i in range(1, nt):
-        prediction = predictor_non_const_delay(u[i-1], pde_sol[i-1], phi_inv(t[i-1], args[0], args[1])-t[i-1], x, model)
+        prediction = predictor_func(u[i-1], pde_sol[i-1], phi_inv(t[i-1], args[0], args[1])-t[i-1], x, model)
         predictions[i-1] = prediction
         delays[i-1] = phi_inv(t[i-1], args[0], args[1])-t[i-1]
         pi = (1+x[0:nx-1]*(phi_inv_deriv(t[i-1], args[0], args[1])-1)/(phi_inv(t[i-1], args[0], args[1])-t[i-1]))
         pde_sol[i][0:nx-1] = pde_sol[i-1][0:nx-1] + dt/dx * np.tile(pi[:, np.newaxis], (1, 2))\
                                                              *(pde_sol[i-1][1:nx] - pde_sol[i-1][0:nx-1])
-        pde_sol[i][-1] = controller(prediction[-1], t[i-1]+D)
+        pde_sol[i][-1] = controller(prediction[-1], phi_inv(t[i-1], args[0], args[1]))
         u[i] = u[i-1] + dt*dynamics(u[i-1], pde_sol[i][0])
         controls[i] =  pde_sol[i][0]
     return u, controls, pde_sol, predictions, delays
-
-
-
-
 
