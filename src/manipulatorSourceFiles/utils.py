@@ -64,13 +64,13 @@ def plot_trajectory(link, t, nD, qdes, model_states, numerical_states, \
     
     subfig.subplots_adjust(left=0.08, bottom=0.2, right=0.98, top=0.85, wspace=0.2, hspace=0.)
     axes = subfig.subplots(nrows=1, ncols=2)
-    axes[0].set_title("System state $X(t)$")
+    axes[0].set_title("System state $Z_5(t)$")
     line1, =axes[0].plot(t, qdes[:-5, link])
     line2, =axes[0].plot(t, numerical_states[:, link], color="green", linestyle=linestyle_tuple[2][1])
     line3, =axes[0].plot(t, model_states[:, link], color="orange", linestyle=linestyle_tuple[5][1])
     axes[0].set_xticks([0, 2.5, 5, 7.5, 10])
     
-    axes[1].set_title(r"Approximate predictor $\hat{P}(t)$")
+    axes[1].set_title(r"Approximate predictor $\hat{P}_5(t)$")
     axes[1].plot(t,numerical_predictors[:, -1, link] , color="green",  linestyle=linestyle_tuple[2][1])
     axes[1].plot(t, model_predictors[:, -1, link] , color="orange",  linestyle=linestyle_tuple[5][1])
     
@@ -83,7 +83,7 @@ def plot_trajectory(link, t, nD, qdes, model_states, numerical_states, \
     subfig.subplots_adjust(left=0.08, bottom=0.3, right=0.98, top=0.95, wspace=0.2, hspace=0.)
     
     axes = subfig.subplots(nrows=1, ncols=2)
-    axes[0].set_title(r"Control $\kappa(\hat{P}(t))$")
+    axes[0].set_title(r"Control $\kappa(\hat{P}_5(t))$")
     axes[0].plot(t, numerical_controls[:-5, link], color="green", linestyle=linestyle_tuple[2][1])
     axes[0].plot(t, model_controls[:-5, link], color="orange", linestyle=linestyle_tuple[5][1])
     
@@ -92,7 +92,7 @@ def plot_trajectory(link, t, nD, qdes, model_states, numerical_states, \
     axes[1].set_xticks([0, 2.5, 5, 7.5, 10])
     
     axes[1].set_xlabel("Time t", labelpad=0)
-    axes[1].set_title(r"Prediction error $\hat{P}(t) - X(t+D)$")
+    axes[1].set_title(r"Prediction error $\hat{P}_5(t) - Z_5(t+D)$")
     axes[1].plot(t[:-nD-5], abs(numerical_states[nD+5:, link] - numerical_predictors[nD+1:-4, -1, link]), color="green")
     axes[1].plot(t[:-nD-5], abs(model_states[nD+5:, link] - model_predictors[nD+1:-4,-1, link]), color="orange")
     
