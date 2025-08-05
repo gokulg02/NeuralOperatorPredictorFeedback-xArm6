@@ -88,7 +88,7 @@ def model_trainer(model, trainData, testData, num_epochs, batch_size, gamma, lea
         if test_loss <= best_test_loss:
             bestModelDict = model.state_dict()
             best_test_loss = test_loss
-    torch.save(bestModelDict,"../../models/ManipulatorModels" + model_filename)
+    torch.save(bestModelDict,"../models/ManipulatorModels" + model_filename)
     return model, train_lossArr, test_lossArr
     
 def evaluate_train_performance(model, name, train_lossArr, test_lossArr):
